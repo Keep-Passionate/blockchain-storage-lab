@@ -8,3 +8,4 @@ infrastructure/data/
 *.log
 .env
 .cache/
+sync-*.bundle

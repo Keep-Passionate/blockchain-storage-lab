@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 文件功能：展示文件、CID、链上事实和查询回取的端到端数据流。 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
+  <title id="title">Blockchain Storage Lab architecture and data flow</title>
+  <desc id="desc">A file is stored and pinned in IPFS, its CID and metadata are submitted through Fabric Gateway to peers and an orderer, while MySQL and Redis remain rebuildable index and cache layers.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .title { font: 700 30px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 16px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #475569; }
+      .label { font: 600 18px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #0f172a; }
+      .small { font: 400 15px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #334155; }
+      .tiny { font: 400 13px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; fill: #475569; }
+      .box { stroke-width: 2; rx: 16; }
+      .flow { fill: none; stroke: #334155; stroke-width: 3; marker-end: url(#arrow); }
+      .query { fill: none; stroke: #2563eb; stroke-width: 3; stroke-dasharray: 10 8; marker-end: url(#arrowBlue); }
+      .reserve { fill: none; stroke: #94a3b8; stroke-width: 2.5; stroke-dasharray: 7 7; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1500" height="900" fill="#f8fafc"/>
+  <text x="70" y="62" class="title">Blockchain Storage Lab：链上链下数据流</text>
+  <text x="70" y="92" class="subtitle">当前实现：IPFS 保存文件实体，Fabric 保存 CID 与可审计业务事实，数据库只做可重建索引和缓存。</text>
+
+  <!-- Application layer -->
+  <rect x="60" y="150" width="260" height="150" class="box" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="190" y="192" text-anchor="middle" class="label">用户 / 未来前端</text>
+  <text x="190" y="226" text-anchor="middle" class="small">文件 + traceId + 阶段</text>
+  <text x="190" y="252" text-anchor="middle" class="small">提交或查询请求</text>
+
+  <rect x="390" y="130" width="330" height="190" class="box" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="555" y="172" text-anchor="middle" class="label">Java 业务层</text>
+  <text x="555" y="208" text-anchor="middle" class="small">TraceApplicationService</text>
+  <text x="555" y="238" text-anchor="middle" class="small">编排：先存文件，再提交事实</text>
+  <text x="555" y="268" text-anchor="middle" class="small">SHA-256 / CID / 事务调用</text>
+
+  <path d="M320 225 H390" class="flow"/>
+  <text x="355" y="210" text-anchor="middle" class="tiny">请求</text>
+
+  <!-- off-chain -->
+  <rect x="820" y="120" width="300" height="205" class="box" fill="#fef3c7" stroke="#d97706"/>
+  <text x="970" y="162" text-anchor="middle" class="label">IPFS / Kubo</text>
+  <text x="970" y="198" text-anchor="middle" class="small">/api/v0/add → CID</text>
+  <text x="970" y="228" text-anchor="middle" class="small">/api/v0/pin/add</text>
+  <text x="970" y="268" text-anchor="middle" class="small">保存文件字节（链下）</text>
+  <text x="970" y="298" text-anchor="middle" class="tiny">服务器容器：bsl-ipfs</text>
+
+  <path d="M720 205 H820" class="flow"/>
+  <text x="770" y="190" text-anchor="middle" class="tiny">1. add / pin</text>
+  <path d="M820 280 H720" class="query"/>
+  <text x="770" y="305" text-anchor="middle" class="tiny">查询时 cat</text>
+
+  <!-- ledger -->
+  <rect x="390" y="430" width="330" height="185" class="box" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="555" y="472" text-anchor="middle" class="label">Fabric Gateway</text>
+  <text x="555" y="508" text-anchor="middle" class="small">CreateTrace / AppendEvent</text>
+  <text x="555" y="538" text-anchor="middle" class="small">QueryTrace → CID + 事实</text>
+  <text x="555" y="578" text-anchor="middle" class="tiny">只传小型 JSON，不传文件</text>
+
+  <path d="M720 270 C780 300 760 410 720 470" class="flow"/>
+  <text x="770" y="365" class="tiny">2. CID + metadataHash</text>
+
+  <rect x="820" y="405" width="300" height="210" class="box" fill="#fce7f3" stroke="#db2777"/>
+  <text x="970" y="447" text-anchor="middle" class="label">Fabric 网络</text>
+  <text x="970" y="483" text-anchor="middle" class="small">Org1 Peer ↔ Org2 Peer</text>
+  <text x="970" y="513" text-anchor="middle" class="small">Raft Orderer 排序打包</text>
+  <text x="970" y="543" text-anchor="middle" class="small">Channel World State</text>
+  <text x="970" y="583" text-anchor="middle" class="tiny">区块 + 链码 trace</text>
+
+  <path d="M720 522 H820" class="flow"/>
+  <text x="770" y="507" text-anchor="middle" class="tiny">3. 提交交易</text>
+  <path d="M820 575 H720" class="query"/>
+  <text x="770" y="600" text-anchor="middle" class="tiny">4. 返回链上事实</text>
+
+  <!-- chaincode -->
+  <rect x="1190" y="405" width="250" height="210" class="box" fill="#fee2e2" stroke="#dc2626"/>
+  <text x="1315" y="447" text-anchor="middle" class="label">Go 链码 trace</text>
+  <text x="1315" y="485" text-anchor="middle" class="small">CreateTrace</text>
+  <text x="1315" y="515" text-anchor="middle" class="small">AppendEvent</text>
+  <text x="1315" y="545" text-anchor="middle" class="small">QueryTrace</text>
+  <text x="1315" y="583" text-anchor="middle" class="tiny">不读取 IPFS</text>
+  <path d="M1120 510 H1190" class="flow"/>
+
+  <!-- rebuildable stores -->
+  <rect x="390" y="710" width="330" height="110" class="box" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="555" y="750" text-anchor="middle" class="label">MySQL（预留索引）</text>
+  <text x="555" y="783" text-anchor="middle" class="small">页面字段 / 同步状态，可重建</text>
+
+  <rect x="820" y="710" width="300" height="110" class="box" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="970" y="750" text-anchor="middle" class="label">Redis（预留缓存）</text>
+  <text x="970" y="783" text-anchor="middle" class="small">热点查询，可清空重建</text>
+
+  <path d="M555 320 V430" class="flow"/>
+  <text x="575" y="380" class="tiny">业务事实</text>
+  <path d="M555 615 V710" class="reserve"/>
+  <path d="M970 615 V710" class="reserve"/>
+  <text x="575" y="674" class="tiny">后续异步索引</text>
+  <text x="990" y="674" class="tiny">后续缓存</text>
+
+  <!-- legend -->
+  <line x1="70" y1="855" x2="160" y2="855" class="flow"/>
+  <text x="175" y="861" class="tiny">实线：当前主链路</text>
+  <line x1="360" y1="855" x2="450" y2="855" class="query"/>
+  <text x="465" y="861" class="tiny">蓝色虚线：查询回取</text>
+  <line x1="700" y1="855" x2="790" y2="855" class="reserve"/>
+  <text x="805" y="861" class="tiny">灰色虚线：预留扩展</text>
+</svg>

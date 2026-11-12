@@ -2,6 +2,8 @@
 
 本文件描述本项目的主线架构：**文件使用 IPFS 保存，关键事实使用 Hyperledger Fabric 保存，MySQL 和 Redis 作为业务查询层**。本地教学链只保留为可选的结构对照，不作为主实现。
 
+独立 SVG 图：[`architecture-data-flow.svg`](architecture-data-flow.svg)。服务器已完成一次真实闭环验证：`Fabric 2.5.16 + trace/1.0 + mychannel` 成功提交，Java 冒烟程序输出 `cid=...`、`fabricEvents=1`、`ipfsRoundTripVerified=true`。
+
 ## 1. 一次写入：文件先进入 IPFS，CID 再进入 Fabric
 
 ```mermaid
