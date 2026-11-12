@@ -5,10 +5,11 @@ services:
     container_name: bsl-mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-trace_lab}
-      MYSQL_USER: ${MYSQL_USER:-trace}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-trace_dev_only}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_dev_only}
+      # 文件功能：所有值由 infrastructure/.env 显式提供，兼容服务器上的旧版 Compose。
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3307:3306"
     volumes:
