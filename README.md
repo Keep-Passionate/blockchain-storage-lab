@@ -60,6 +60,6 @@ scripts/                    本地运行、服务器部署和验证脚本
 - `D:\project`：代码和 Git 工作区；
 - `D:\develop`：开发工具（例如 Maven、Docker、Go）以及后续实验输入、运行结果和研究记录；
 - `D:\program`：其他日常程序，不放本项目运行时；
-- 实验室服务器：以 `scripts/deploy-server.sh` 指定的服务器路径为准，服务器上的运行数据不回写到 Git。
+- 实验室服务器：独立放在 `xc/blockchain-storage-lab`，以 `scripts/deploy-server.sh` 指定的服务器路径为准，服务器上的运行数据不回写到 Git。
 
 JDK 属于系统级工具，Temurin 已由 Windows 包管理器安装在 `C:\Program Files\Eclipse Adoptium`；这不影响项目和实验数据按 D 盘组织。
