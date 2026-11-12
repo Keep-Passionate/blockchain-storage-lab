@@ -53,3 +53,13 @@ scripts/                    本地运行、服务器部署和验证脚本
 首版不声称已经实现 Fabric 底层共识插件、SHT-PBFT、真正的多 Channel 分账本或论文实验数字。`StageBatcher` 只是应用层按环节分组的可读实验模块；它用于理解和后续替换，不能称为 SHT-PBFT。
 
 论文上传附件在共享对话中只显示为“上传文件”，因此本仓库只记录对话中明确出现的架构结论，不猜论文正式题名、作者或未公开的实验参数。见 `docs/03-provenance.md`。
+## 本地与服务器目录约定
+
+当前本地仓库位置：`D:\project\blockchain-storage-lab`。
+
+- `D:\project`：代码和 Git 工作区；
+- `D:\develop`：后续实验输入、运行结果和研究记录；
+- `D:\program`：Maven 等可迁移的开发工具；
+- 实验室服务器：以 `scripts/deploy-server.sh` 指定的服务器路径为准，服务器上的运行数据不回写到 Git。
+
+JDK 属于系统级工具，Temurin 已由 Windows 包管理器安装在 `C:\Program Files\Eclipse Adoptium`；这不影响项目和实验数据按 D 盘组织。
