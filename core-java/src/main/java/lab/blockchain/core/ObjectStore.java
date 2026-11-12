@@ -1,3 +1,4 @@
+/** 文件功能：定义离线教学对象存储接口；主实现位于 backend-java 的 IPFS 适配器。 */
 package lab.blockchain.core;
 
 import java.io.IOException;

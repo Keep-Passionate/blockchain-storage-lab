@@ -1,3 +1,4 @@
+/** 文件功能：验证离线内容寻址存储、pin 和教学账本摘要完整性。 */
 package lab.blockchain.core;
 
 import org.junit.jupiter.api.Test;

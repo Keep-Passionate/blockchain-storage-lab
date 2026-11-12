@@ -1,65 +1,98 @@
 # Blockchain Storage Lab
 
-这是一个面向学习和后续研究的独立实验仓库。它把共享对话中两篇论文的可复现部分拆成清楚的边界：
+这是一个面向学习和后续研究的链上链下存储实验仓库。当前主链路直接使用老师偏好的 **IPFS + Hyperledger Fabric**：IPFS 保存文件实体，Fabric 保存 CID 和关键业务事实，MySQL/Redis 只承担可重建的索引与缓存。
 
-- 第二篇普洱茶系统提供“文件进 IPFS、CID 和关键事实进链”的链上链下存储思路；
-- 第一篇泰山茶系统提供种植、采摘、加工、仓储、运输、销售六个业务阶段；
-- 首版实现一个**自有的教育型区块链**，用来先弄懂区块、哈希、Merkle 根、链下内容寻址和查询闭环；
-- Fabric、真实 IPFS、MySQL、Redis 是可替换适配器和部署路线，不把论文中的高级创新冒充成已经复现。
+## 当前主架构
 
-当前首版闭环：
-
-```text
-文件字节
-  -> ContentAddressedStore（链下对象，sha256:<hash>）
-  -> TraceEvent（链上只保存 CID、摘要和业务事实）
-  -> Block（previousHash + Merkle root + block hash）
-  -> 查询 traceId
-  -> 用 CID 取回文件并校验哈希
+```mermaid
+flowchart LR
+    User[用户/未来前端] --> App[Java 业务层]
+    App --> S[TraceApplicationService]
+    S -->|1. add| IPFS[Kubo IPFS]
+    IPFS -->|CID| S
+    S -->|2. pin| IPFS
+    S -->|3. CreateTrace(CID+事实)| Gateway[Fabric Gateway]
+    Gateway --> Peer1[Org1 Peer]
+    Gateway --> Peer2[Org2 Peer]
+    Peer1 --> Orderer[Raft Orderer]
+    Peer2 --> Orderer
+    Orderer --> Peer1
+    Orderer --> Peer2
+    Peer1 --> WorldState[Channel World State]
+    S -.预留索引.-> MySQL[MySQL]
+    S -.预留缓存.-> Redis[Redis]
 ```
 
-## 先运行最小演示
+## 一次写入的数据流
 
-需要 JDK 17。当前电脑如果还没有 Java，可以在实验室 Linux 服务器上运行；Windows 安装后重新打开终端即可。
+1. Java 收到文件和溯源字段。
+2. `IpfsHttpObjectStorage` 调用 Kubo `/api/v0/add`，得到真实 IPFS CID。
+3. Java 调用 `/api/v0/pin/add`，保证当前节点保留对象。
+4. `TraceApplicationService` 组成 `TraceEvent`，其中只包含 CID、阶段、操作者、时间和摘要。
+5. `FabricGatewayLedger` 调用 `CreateTrace`。
+6. Fabric Peer 背书，Orderer 排序打包，Peer 提交区块并更新 World State。
+
+查询方向相反：Fabric `QueryTrace(traceId)` 返回事件和 CID，Java 再调用 IPFS `/api/v0/cat` 取文件，并重新计算 SHA-256 校验内容。
+
+链码永远不读取 IPFS，也不保存文件字节。这样链码保持小而容易审计，文件存储和业务共识各自负责一件事。
+
+## 代码目录
+
+```text
+core-java/                  离线教学对照：区块、哈希、Merkle、文件完整性
+backend-java/               当前主链路：IPFS HTTP 适配器 + Fabric Gateway 适配器
+chaincode-go/               当前 Fabric 链码：CreateTrace/AppendEvent/QueryTrace
+infrastructure/             服务器端 IPFS、MySQL、Redis，以及 Fabric 说明
+scripts/                    服务器部署、Fabric 安装和网络启动脚本
+docs/                       学习路线、架构、数据流和第一篇论文的后续扩展
+```
+
+`core-java` 保留用于离线理解数据结构和写单元测试；运行系统的主路径已经是 `backend-java -> IPFS + Fabric`，不再用自有链替代 Fabric。
+
+## 服务器部署边界
+
+代码工作区位于 `D:/project/blockchain-storage-lab`，服务器工作区约定为 `xc/blockchain-storage-lab`。Docker、Kubo IPFS、Fabric、MySQL 和 Redis 只在服务器运行，本地不启动这些服务。
+
+Fabric test-network 使用官方 samples 脚本管理，不把证书、私钥和 Docker 网络复制进 Git。先设置已审核的 `FABRIC_SAMPLES_REF`，再运行：
 
 ```bash
-cd core-java
-mvn test
-mvn -q exec:java -Dexec.mainClass=lab.blockchain.core.DemoMain
+./scripts/install-fabric.sh
+./scripts/fabric-network.sh up
+./scripts/fabric-network.sh deploy
 ```
 
-演示会输出 `cid`、区块哈希、账本校验结果和文件往返校验结果。这里的 `sha256:<hash>` 是教学适配器的 CID 形态，不是完整 IPFS CID；这是为了让每一步都能读懂、可单步调试。真实 IPFS 适配器接入后，`TraceStorageService` 的职责不变。
+网络关闭：
 
-## 学习顺序
-
-1. 读 `docs/00-learning-path.md`，先理解四类存储和一次写入/查询。
-2. 读 `Hashing`、`ContentAddressedStore`、`TraceEvent`、`Block`、`BlockchainLedger`，每次只看一个类。
-3. 运行 `DemoMain`，修改描述或文件内容，观察 CID、事件哈希、Merkle 根和区块哈希的变化。
-4. 读 `docs/01-architecture.md`，理解以后怎样接 Spring Boot、Fabric、IPFS、MySQL、Redis。
-5. 再读 `docs/02-first-paper-extension.md`，从应用层阶段分组开始尝试第一篇的模块修改。
-
-## 目录
-
-```text
-core-java/                  可运行的自有区块链和链下对象存储核心
-chaincode-go/               未来接入 Fabric 2.x 的最小 Go 链码骨架
-infrastructure/             MySQL、Redis、IPFS 的 Docker Compose 开发依赖
-docs/                       架构、概念和论文边界说明
-scripts/                    本地运行、服务器部署和验证脚本
+```bash
+./scripts/fabric-network.sh down
 ```
 
-## 目前明确不做的事
+## 本地验证
 
-首版不声称已经实现 Fabric 底层共识插件、SHT-PBFT、真正的多 Channel 分账本或论文实验数字。`StageBatcher` 只是应用层按环节分组的可读实验模块；它用于理解和后续替换，不能称为 SHT-PBFT。
+本地只验证 Java 编排层和离线对照模块：
 
-论文上传附件在共享对话中只显示为“上传文件”，因此本仓库只记录对话中明确出现的架构结论，不猜论文正式题名、作者或未公开的实验参数。见 `docs/03-provenance.md`。
-## 本地与服务器目录约定
+```powershell
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17.0.21.9-hotspot'
+& 'D:\develop\maven\apache-maven-3.10.0\bin\mvn.cmd' -q test
+& 'D:\project\blockchain-storage-lab\scripts\run-demo.ps1'
+```
 
-当前本地仓库位置：`D:\project\blockchain-storage-lab`。
+真正的 IPFS/Fabric 集成测试需要服务器上的 Kubo、Fabric 网络、证书和私钥，因此不伪造本地成功结果。
 
-- `D:\project`：代码和 Git 工作区；
-- `D:\develop`：开发工具（例如 Maven、Docker、Go）以及后续实验输入、运行结果和研究记录；
-- `D:\program`：其他日常程序，不放本项目运行时；
-- 实验室服务器：独立放在 `xc/blockchain-storage-lab`，以 `scripts/deploy-server.sh` 指定的服务器路径为准，服务器上的运行数据不回写到 Git。
+## 数据库边界
 
-JDK 属于系统级工具，Temurin 已由 Windows 包管理器安装在 `C:\Program Files\Eclipse Adoptium`；这不影响项目和实验数据按 D 盘组织。
+MySQL 保存页面字段、查询索引和同步状态；Redis 缓存热点查询。二者都可以从 Fabric 和 IPFS 重建，不能成为最终可信源。
+
+## 后续路线
+
+1. 在服务器启动真实 Kubo 和 Fabric test-network。
+2. 用 Fabric Gateway 完成第一次 `CreateTrace -> QueryTrace` 端到端调用。
+3. 加入 Spring Boot Controller，但保持业务编排和适配器边界不变。
+4. 增加 MySQL 索引、Redis 缓存和链上事件监听。
+5. 老师确定方案后，再评估多阶段账本、私有数据集合、多 Channel、应用层 Radix-Merkle，以及第一篇论文模块的修改。
+
+每次代码更新都同步修改本 README、对应模块 README 和 `docs/05-data-flow.md`，记录新增组件、数据流和验证命令。
+
+## 来源边界
+
+本仓库根据共享对话中明确出现的两条路线搭建：第一篇提供六个茶叶业务阶段，第二篇提供 IPFS CID 上链的链上链下边界。论文附件的正式题名、作者、原始网络配置和实验数字没有在共享页面中暴露，因此本仓库记录的是可运行的功能架构，不声称恢复论文原始源码或实验结果。

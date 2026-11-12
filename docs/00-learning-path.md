@@ -1,32 +1,53 @@
 # 学习路线：先看见数据去了哪里
 
+先掌握一条主线：**文件进 IPFS，CID 和关键事实进 Fabric，MySQL 做索引，Redis 做缓存**。
+
 ## 四类存储
 
-| 组件 | 首版对应 | 保存什么 | 可信边界 |
-|---|---|---|---|
-| 链下对象存储 | `ContentAddressedStore`，以后可换 IPFS | 图片、视频、PDF 的文件字节 | CID/哈希能证明取回内容没被悄悄改，不能证明最初上传者没有造假 |
-| 自有区块链 | `BlockchainLedger`，以后可换 Fabric | 小型关键事实、CID、元数据摘要、事件顺序 | 多方共识还没有实现；首版是单进程可验证账本 |
-| MySQL | 后续适配器 | 用户、页面字段、查询索引和普通业务数据 | 企业数据库，不自动提供多方共同见证 |
-| Redis | 后续适配器 | `traceId -> 查询结果` 缓存 | 可丢失，丢失后必须回源链上/数据库重建 |
+| 组件 | 保存什么 | 可信边界 |
+|---|---|---|
+| IPFS | 图片、视频、PDF、检测报告等文件字节 | CID 能校验取回内容，不能证明原始上传内容真实 |
+| Fabric | CID、阶段、操作者、时间、元数据摘要 | 多组织共同维护关键事实 |
+| MySQL | 页面字段、分页索引、同步状态 | 查询层，可由 Fabric 重建 |
+| Redis | 热点查询结果 | 缓存，可删除后回源重建 |
+
+## 推荐阅读顺序
+
+1. 读根目录 `README.md` 和 `docs/05-data-flow.md`。
+2. 读 `CreateTrace` 链码，理解 Fabric 保存什么。
+3. 读 `IpfsHttpObjectStorage`，理解 Kubo HTTP API 的 `add/cat/pin`。
+4. 读 `FabricGatewayLedger`，理解 Java 如何连接 Peer Gateway。
+5. 读 `TraceApplicationService`，理解“先 IPFS、后 Fabric”的编排。
+6. 最后再读 `core-java` 的区块、哈希和 Merkle 对照实现。
 
 ## 一次写入
 
-1. `ContentAddressedStore.put(file)` 计算 SHA-256，按哈希保存文件，返回 `sha256:<hash>`。
-2. `TraceStorageService` 生成 `TraceEvent`。事件只携带 CID 和 `metadataHash`，不携带图片字节。
-3. `BlockchainLedger.append(event)` 生成区块。区块链接前一区块哈希，并计算本区块的 Merkle 根。
-4. 真实系统里，这一步之后再写 MySQL 索引和 Redis 缓存；缓存失败不能回滚已确认的链上事实。
+```text
+file bytes
+  -> Kubo /api/v0/add
+  -> CID
+  -> Kubo /api/v0/pin/add
+  -> CreateTrace(CID + business facts)
+  -> Peer endorse
+  -> Raft Orderer order
+  -> Peer commit block + World State
+```
 
 ## 一次查询
 
-1. 真实后端先查 Redis，未命中再查 Fabric/自有账本和 MySQL。
-2. 从事件得到 CID，再从 IPFS/链下对象存储取文件。
-3. 用内容哈希校验文件。如果哈希不一致，说明对象损坏或存储实现有问题。
+```text
+traceId
+  -> Fabric QueryTrace
+  -> CID
+  -> Kubo /api/v0/cat
+  -> Java SHA-256 verification
+  -> response
+```
 
-## 四个最容易混淆的词
+## 需要反复问自己的三个问题
 
-- **区块**：按顺序装载交易/事件的历史容器。
-- **世界状态**：把历史事件折叠后的当前状态；本首版先只保留历史事件，后续再加状态索引。
-- **Orderer**：Fabric 中接收交易、排序和打包区块的排序服务；Raft 是它使用的共识方式之一。
-- **Peer**：Fabric 中执行链码、背书、验证并保存账本的业务节点。
+1. 这段数据现在在哪个组件里？
+2. 哪个组件有权改变它？
+3. 如果它丢失，能否从可信源重建？
 
-首版自有链把 `Orderer + Peer + 共识` 压缩成一个进程，目的是先弄懂数据结构。后续接 Fabric 时再把这些角色拆开。
+这三个问题可以帮助我们避免把文件塞进 Fabric，也避免让 Redis 变成唯一数据源。

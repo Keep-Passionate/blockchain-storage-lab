@@ -1,3 +1,4 @@
+/** 文件功能：运行一次文件、IPFS 风格 CID、账本和文件校验的最小演示。 */
 package lab.blockchain.core;
 
 import java.nio.charset.StandardCharsets;

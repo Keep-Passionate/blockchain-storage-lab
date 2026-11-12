@@ -1,11 +1,14 @@
 # 第一篇模块的可控扩展
 
+当前基线直接运行在 IPFS + Fabric 上，先完成单 Channel 的六阶段事件，再决定是否拆分账本或 Channel。
+
 第一篇论文的“分账本、跨账本事件、SHT-PBFT、Radix-Merkle”都涉及 Fabric 底层或网络层。首版先做可观察的应用层实验：
 
-1. `StageBatcher` 按 `PLANTING`、`PICKING`、`PROCESSING`、`WAREHOUSE`、`TRANSPORT`、`SALES` 分组。
-2. 比较逐条追加和按阶段批处理的耗时、区块数量和查询结果，不把它叫成共识改造。
-3. 保持同一组 `TraceEvent`，只替换分组策略，形成可复现实验记录。
-4. 后续才尝试事件通知、多个账本/Channel 和应用层前缀索引。
+1. Java 业务层按 `PLANTING`、`PICKING`、`PROCESSING`、`WAREHOUSE`、`TRANSPORT`、`SALES` 生成 Fabric 事件。
+2. `StageBatcher` 只作为应用层批处理实验，不修改 Fabric 底层共识。
+3. 比较逐条追加和按阶段批处理的耗时、交易数量和查询结果，不把它叫成共识改造。
+4. 保持同一组 `TraceEvent`，只替换分组策略，形成可复现实验记录。
+5. 后续才尝试事件通知、多个账本/Channel 和应用层前缀索引。
 
 ## 为什么先不改 Fabric 共识
 

@@ -1,15 +1,29 @@
-# Backend boundary
+# Java backend: IPFS + Fabric
 
-这里先放业务编排的接口，不急着引入 Spring Cloud、Nacos 或 Vue。它们分别解决微服务治理和页面问题，不能替代 Fabric Client 或 IPFS Client。
+这里是当前主链路的 Java 业务层，直接调用 Kubo HTTP API 和官方 Fabric Gateway Java client。
 
-建议最终的调用链是：
+当前调用链是：
 
 ```text
-HTTP Controller -> TraceApplicationService
-                 -> ObjectStoragePort (IPFS)
-                 -> LedgerPort (Fabric Gateway 或本地链)
-                 -> TraceRepository (MySQL)
-                 -> TraceCache (Redis)
+HTTP Controller（后续加入） -> TraceApplicationService
+                             -> IpfsHttpObjectStorage -> Kubo /api/v0/add, cat, pin/add
+                             -> FabricGatewayLedger -> Gateway -> Peer / Orderer / Channel / Chaincode
+                             -> MySQL（预留索引）
+                             -> Redis（预留缓存）
 ```
 
-`core-java` 是当前可运行的本地实现；本目录是未来 Spring Boot 适配层的放置位置。先把接口读懂，再接框架，便于定位问题。
+`TraceApplicationService` 先上传文件并 pin，拿到 CID 后再提交 Fabric。查询方向相反：先从 Fabric 得到 CID，再从 IPFS `cat` 取回文件。
+
+`FabricGatewayConfig` 只接收服务器证书路径；证书、私钥和 connection profile 不进入 Git。
+
+服务器完成 Fabric/IPFS 启动后，可用 `FabricIpfsDemoMain` 做一次真实冒烟测试：
+
+```bash
+export FABRIC_TLS_CERT_PATH=/path/to/peer0.org1.example.com/tls/ca.crt
+export FABRIC_IDENTITY_CERT_PATH=/path/to/User1@org1.example.com/msp/signcerts/cert.pem
+export FABRIC_PRIVATE_KEY_PATH=/path/to/User1@org1.example.com/msp/keystore/<key>_sk
+mvn -q -pl backend-java exec:java \
+  -Dexec.mainClass=lab.blockchain.backend.FabricIpfsDemoMain
+```
+
+程序会输出真实 IPFS CID、Fabric 查询到的事件数量和文件往返校验结果。

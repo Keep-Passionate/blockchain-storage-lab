@@ -9,4 +9,6 @@ export LAB_PATH='~/xc/blockchain-storage-lab'
 ./scripts/verify-server.sh
 ```
 
-服务器端先准备 JDK 17、Go、Docker、Docker Compose 和 rsync。首次部署建议只运行 `core-java` 演示；老师确认 Fabric 版本和网络拓扑后，再把 Fabric test-network 放入 `infrastructure/fabric`。部署脚本默认跳过 `.git`、运行产物和 Maven target，避免把本地缓存传上服务器。Docker、IPFS、MySQL、Redis 只在服务器的 `xc` 目录和 Docker 数据卷中运行，本地不启动这些服务。
+服务器端准备 JDK 17、Go、Docker、Docker Compose、rsync 和 Fabric CLI。主链路直接使用服务器上的 Kubo IPFS 与 Fabric test-network；本地不启动这些服务。部署脚本默认跳过 `.git`、运行产物和 Maven target，避免把本地缓存传上服务器。
+
+Fabric 的安装、启动和链码部署由 `install-fabric.sh`、`fabric-network.sh` 完成。Fabric samples 的具体提交号必须单独记录在服务器实验记录中，避免用随时变化的 `main` 分支冒充可复现版本。

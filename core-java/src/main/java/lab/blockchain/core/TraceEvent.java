@@ -1,3 +1,4 @@
+/** 文件功能：定义写入 Fabric/本地账本的茶叶溯源事件数据结构。 */
 package lab.blockchain.core;
 
 import java.time.Instant;

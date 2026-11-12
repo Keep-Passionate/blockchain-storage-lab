@@ -1,3 +1,4 @@
+/** 文件功能：按业务阶段分组事件，用于第一篇论文模块的应用层实验。 */
 package lab.blockchain.core;
 
 import java.util.EnumMap;

@@ -1,38 +1,60 @@
-# 系统架构和替换边界
+# 系统架构和责任边界
+
+当前主链路直接使用 IPFS 和 Hyperledger Fabric：
 
 ```mermaid
 flowchart LR
-    Client[Postman 或未来 Vue] --> App[Java Spring Boot]
-    App --> Orchestrator[TraceStorageService]
-    Orchestrator --> Offchain[IPFS / ContentAddressedStore\n文件实体 + CID]
-    Orchestrator --> Chain[自有链 / Fabric Client\n关键事实 + CID + 摘要]
-    Orchestrator --> MySQL[MySQL\n普通业务数据]
-    Orchestrator --> Redis[Redis\n查询缓存]
-    Chain --> Event[TraceEvent]
+    Client[HTTP 客户端] --> App[Java 应用]
+    App --> Service[TraceApplicationService]
+    Service --> IPFS[IpfsHttpObjectStorage]
+    IPFS --> Kubo[Kubo IPFS]
+    Service --> Fabric[FabricGatewayLedger]
+    Fabric --> Gateway[Fabric Gateway]
+    Gateway --> Peer[Peer + Chaincode]
+    Peer --> Orderer[Raft Orderer]
+    Peer --> MySQL[MySQL 索引]
+    Peer --> Redis[Redis 缓存]
 ```
 
-## 首版实现与论文路线的对应关系
+## 写入顺序
 
-| 论文/概念 | 首版实现 | 后续替换点 |
+1. Java 应用收到文件和溯源字段。
+2. `IpfsHttpObjectStorage.add` 调用 Kubo `/api/v0/add`，得到 CID。
+3. `IpfsHttpObjectStorage.pin` 调用 `/api/v0/pin/add`。
+4. `TraceApplicationService` 生成 `TraceEvent`。
+5. `FabricGatewayLedger.submit` 调用 `CreateTrace`。
+6. Fabric 完成背书、排序、提交区块和 World State 更新。
+
+## 查询顺序
+
+1. 先查 Redis，未命中再查 MySQL 和 Fabric。
+2. `QueryTrace(traceId)` 返回事件及 CID。
+3. Java 调用 IPFS `/api/v0/cat`。
+4. Java 重新计算文件摘要，校验取回内容。
+5. 查询结果写回 MySQL/Redis。
+
+## 模块职责
+
+| 模块 | 职责 | 明确不做的事 |
 |---|---|---|
-| IPFS 文件保存 | `ContentAddressedStore` | `IpfsClient`：`add/cat/pin` |
-| Fabric 链上关键事实 | `BlockchainLedger` | `FabricClient`：`submitTrace/queryTrace` |
-| 链码 `CreateTrace/QueryTrace/AppendEvent` | `TraceStorageService` + `TraceEvent` | `chaincode-go/contract/TraceContract.go` |
-| 六个业务环节 | `Stage` 枚举 | 后续增加领域字段，不改变存储边界 |
-| 第一篇按环节分组 | `StageBatcher` | 先做应用层批处理，再研究多 Channel/共识 |
-| Radix-Merkle | 首版只保留标准 `MerkleTree` | 应用层前缀索引实验，不直接改 Fabric 底层 |
+| `TraceApplicationService` | 编排 IPFS 和 Fabric 的顺序 | 不处理 Fabric 网络细节 |
+| `IpfsHttpObjectStorage` | `add/cat/pin` | 不决定业务阶段，不写 Fabric |
+| `FabricGatewayLedger` | Gateway 连接、提交和查询交易 | 不上传文件，不访问 IPFS |
+| `chaincode-go` | 保存 CID 和小型业务事实 | 不读取文件、MySQL、Redis 或 IPFS |
+| MySQL | 页面字段、索引、同步状态 | 不替代 Fabric 可信事实 |
+| Redis | 热点查询缓存 | 不作为最终数据源 |
 
-## 责任边界
+## 可选离线模块
 
-- Controller 只接收请求和返回结果。
-- Service 编排“文件先落链下、CID 再上链”的流程。
-- 链码/账本只处理小型事实，不读取 MySQL、Redis 或文件本体。
-- IPFS 适配器只负责 `add/cat/pin`，不决定业务阶段。
-- Redis 只是可重建缓存，不能成为最终可信源。
+`core-java` 保留 `BlockchainLedger`、`MerkleTree` 和本地内容存储，用于学习哈希、区块和完整性校验。它是离线对照，不是当前系统的 Fabric 替代品。
 
 ## 失败场景
 
-1. 链下上传成功、链上提交失败：记录 `upload_pending`，重试链上提交；最终清理孤儿对象需要单独任务。
-2. 链上提交成功、Redis 写入失败：返回链上成功，下一次查询回源并重建缓存。
-3. 文件节点离线：返回对象不可用，依靠 pin、多副本和健康检查恢复。
-4. `traceId` 重复：链上接口应拒绝重复初始事件，追加事件使用独立事件序号。
+- IPFS 成功、Fabric 失败：保存待提交任务，重试 Fabric，之后清理孤儿 CID。
+- Fabric 成功、MySQL 失败：以 Fabric 为准，补偿同步 MySQL。
+- Redis 写入失败：返回已确认结果，下一次查询回源重建缓存。
+- IPFS 内容校验失败：拒绝静默返回，标记对象异常。
+
+## 后续扩展边界
+
+老师确定具体方案后，再选择六阶段事件通知、多组织背书、多 Channel、私有数据集合、应用层 Radix-Merkle 或第一篇论文模块改造。所有扩展都保持“大文件在 IPFS、关键事实在 Fabric”的边界。

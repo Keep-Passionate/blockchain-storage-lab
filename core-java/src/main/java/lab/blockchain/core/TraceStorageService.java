@@ -1,3 +1,4 @@
+/** 文件功能：编排离线教学版的文件上传、CID 固定、账本提交和查询回取流程。 */
 package lab.blockchain.core;
 
 import java.io.IOException;

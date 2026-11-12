@@ -1,3 +1,4 @@
+/** 文件功能：定义教学账本中的区块结构、Merkle 根和区块哈希计算。 */
 package lab.blockchain.core;
 
 import java.time.Instant;

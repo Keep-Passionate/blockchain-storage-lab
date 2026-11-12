@@ -1,3 +1,4 @@
+# 文件功能：在 GitHub Actions 中验证 Java 模块和 Go 链码。
 name: build
 
 on:

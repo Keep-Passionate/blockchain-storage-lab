@@ -1,3 +1,4 @@
+/** 文件功能：实现本地内容寻址对象存储，作为 IPFS 适配器接入前的可验证替身。 */
 package lab.blockchain.core;
 
 import java.io.IOException;

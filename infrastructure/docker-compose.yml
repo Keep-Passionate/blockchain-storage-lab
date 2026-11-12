@@ -1,3 +1,4 @@
+# 文件功能：定义服务器端 IPFS、MySQL 和 Redis 开发依赖。
 services:
   mysql:
     image: mysql:8.4
@@ -34,7 +35,8 @@ services:
       retries: 10
 
   ipfs:
-    image: ipfs/kubo:v0.31.0
+    # 服务器端实际运行的 Kubo IPFS；本地不启动此 Compose。
+    image: ipfs/kubo:v0.43.1
     container_name: bsl-ipfs
     restart: unless-stopped
     ports:

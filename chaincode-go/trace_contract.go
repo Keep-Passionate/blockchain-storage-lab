@@ -1,10 +1,11 @@
+// 文件功能：实现 Hyperledger Fabric 链码，保存溯源事件和 IPFS CID，不读取文件内容。
 package main
 
 import (
     "encoding/json"
     "fmt"
 
-    "github.com/hyperledger/fabric-contract-api-go/contractapi"
+    "github.com/hyperledger/fabric-contract-api-go/v2/contractapi"
 )
 
 type TraceEvent struct {
@@ -28,8 +29,8 @@ func (c *TraceContract) CreateTrace(ctx contractapi.TransactionContextInterface,
     if err := json.Unmarshal([]byte(eventJSON), &event); err != nil {
         return fmt.Errorf("invalid event JSON: %w", err)
     }
-    if event.TraceID == "" || event.ContentCID == "" {
-        return fmt.Errorf("traceId and contentCid are required")
+    if err := validateEvent(event); err != nil {
+        return err
     }
     key := "trace:" + event.TraceID
     exists, err := ctx.GetStub().GetState(key)
@@ -55,6 +56,9 @@ func (c *TraceContract) AppendEvent(ctx contractapi.TransactionContextInterface,
     if err := json.Unmarshal([]byte(eventJSON), &event); err != nil {
         return fmt.Errorf("invalid event JSON: %w", err)
     }
+    if err := validateEvent(event); err != nil {
+        return err
+    }
     key := "trace:" + event.TraceID
     current, err := ctx.GetStub().GetState(key)
     if err != nil {
@@ -76,6 +80,22 @@ func (c *TraceContract) AppendEvent(ctx contractapi.TransactionContextInterface,
         return err
     }
     return ctx.GetStub().SetEvent("TraceAppended", payload)
+}
+
+// validateEvent keeps the on-chain schema small and rejects incomplete facts.
+func validateEvent(event TraceEvent) error {
+    fields := map[string]string{
+        "traceId": event.TraceID, "objectId": event.ObjectID, "stage": event.Stage,
+        "operatorId": event.OperatorID, "eventTime": event.EventTime,
+        "contentCid": event.ContentCID, "metadataHash": event.MetadataHash,
+        "description": event.Description,
+    }
+    for name, value := range fields {
+        if value == "" {
+            return fmt.Errorf("%s is required", name)
+        }
+    }
+    return nil
 }
 
 // QueryTrace returns the event history for one trace.

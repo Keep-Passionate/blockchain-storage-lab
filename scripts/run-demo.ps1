@@ -1,3 +1,4 @@
+# 文件功能：在 Windows 上直接编译并运行 Java 最小闭环演示。
 param(
     [string]$Root = "$PSScriptRoot\..\runs\demo"
 )

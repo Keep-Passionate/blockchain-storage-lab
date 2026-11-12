@@ -1,3 +1,4 @@
+/** 文件功能：实现单进程教学账本，用于对照理解 Fabric 的提交与校验流程。 */
 package lab.blockchain.core;
 
 import java.time.Instant;

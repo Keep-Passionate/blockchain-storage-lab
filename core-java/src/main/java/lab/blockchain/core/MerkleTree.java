@@ -1,3 +1,4 @@
+/** 文件功能：实现二叉 Merkle 根计算，为后续批量事件和前缀索引实验提供基础。 */
 package lab.blockchain.core;
 
 import java.util.ArrayList;

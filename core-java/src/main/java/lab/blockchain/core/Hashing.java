@@ -1,3 +1,4 @@
+/** 文件功能：提供无第三方依赖的 SHA-256 十六进制摘要工具。 */
 package lab.blockchain.core;
 
 import java.nio.charset.StandardCharsets;
