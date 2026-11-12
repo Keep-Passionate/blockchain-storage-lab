@@ -9,3 +9,4 @@ infrastructure/data/
 .env
 .cache/
 sync-*.bundle
+chaincode-go/vendor/
