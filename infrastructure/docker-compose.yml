@@ -1,4 +1,5 @@
 # 文件功能：定义服务器端 IPFS、MySQL 和 Redis 开发依赖。
+version: "3.3"
 services:
   mysql:
     image: mysql:8.4
