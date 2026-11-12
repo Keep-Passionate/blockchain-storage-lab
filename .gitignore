@@ -7,3 +7,4 @@ runs/
 infrastructure/data/
 *.log
 .env
+.cache/
