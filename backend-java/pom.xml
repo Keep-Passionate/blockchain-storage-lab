@@ -34,6 +34,18 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <!-- 使用 JDBC 明示每次持久化，便于学习；与服务器 MySQL 8.4 配套锁定。 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>lab.blockchain</groupId>
             <artifactId>blockchain-storage-core</artifactId>
@@ -63,6 +75,11 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
             <!-- 允许服务器用一条 Maven 命令运行真实 IPFS + Fabric 冒烟程序。 -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

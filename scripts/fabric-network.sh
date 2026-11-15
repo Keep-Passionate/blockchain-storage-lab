@@ -22,11 +22,21 @@ case "${1:-up}" in
       -ccl go \
       -c mychannel)
     ;;
+  deploy-provenance)
+    # 单独命名的新链码，不关闭网络，不删除原 trace 账本。
+    (cd "$NETWORK_DIR" && ./network.sh deployCC \
+      -ccn provenance \
+      -ccp "$REPO_ROOT/chaincode-go" \
+      -ccl go \
+      -ccv "${PROVENANCE_VERSION:-1.0}" \
+      -ccs "${PROVENANCE_SEQUENCE:-1}" \
+      -c mychannel)
+    ;;
   down)
     (cd "$NETWORK_DIR" && ./network.sh down)
     ;;
   *)
-    echo "用法: $0 {up|deploy|down}" >&2
+    echo "用法: $0 {up|deploy|deploy-provenance|down}" >&2
     exit 2
     ;;
 esac

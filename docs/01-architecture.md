@@ -1,5 +1,7 @@
 # 系统架构和责任边界
 
+> 历史设计保留：下文是早期 `TraceApplicationService` / `CreateTrace` 示例，不是当前四层业务主路径。旧图中 Peer 向 Orderer 广播的简写、HTTP 入口和预留缓存描述不能当作当前实现；准确流程以 [当前 README](../README.md)、[数据流](05-data-flow.md) 和 [四层业务设计](06-business-design.md) 为准。
+
 当前主链路直接使用 IPFS 和 Hyperledger Fabric：
 
 ```mermaid

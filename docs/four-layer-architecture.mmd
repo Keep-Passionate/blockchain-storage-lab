@@ -1,0 +1,38 @@
+%% 文件功能：展示四层业务、Fabric 提交过程和链下证据/投影的职责边界。
+flowchart TB
+    Input["录入 / 虚拟场景<br/>synthetic=true, schemaVersion=1"] --> Service["Java 业务服务<br/>校验、存证、查询、审核"]
+    Service --> Rules["版本化演示规则<br/>返回明确原因码"]
+    Rules -->|未通过| Journal["MySQL 提交业务日志<br/>p_submission：原始输入与拒绝原因<br/>链下独有证据，需独立备份"]
+    Service -->|请求状态与回执| Journal
+    Rules -->|通过关键约束| Model
+
+    subgraph Model["四层业务关系：当前单 Channel"]
+        Plot["不可变地块快照<br/>品种、生育期、海拔、环境"] -->|一个快照可被多个批次引用| Batch["生产批次<br/>区域代码-年份-六位序号"]
+        Batch --> Operation["操作记录<br/>种植 / 灌溉 / 采收<br/>加工 / 仓储 / 观察"]
+        Batch --> Inspection["检测记录<br/>结论 + 报告 CID + SHA-256"]
+        Inspection --> Review["专家审核：追加意见<br/>FAIL 检测不能 APPROVE"]
+        Inspection -->|FAIL| Alert["预警处理：追加痕迹<br/>来源为检测或审计<br/>deliveryStatus=SIMULATED"]
+        Batch --> Audit["监管审计：追加结果"]
+        Audit -->|FLAGGED| Alert
+    end
+
+    Service -->|报告与审计输入快照 add / pin| IPFS["IPFS / Kubo<br/>链下证据字节"]
+    IPFS -->|CID；取回后核验原始字节 SHA-256| Service
+    Model -->|业务记录提交| Gateway["Fabric Gateway<br/>协调背书与广播"]
+    Gateway -->|模拟执行请求| Peer["Peer + Go 链码<br/>身份、引用与业务约束校验"]
+    Peer -->|背书及读写集| Gateway
+    Gateway -->|已签名背书交易| Orderer["Orderer<br/>排序并生成区块<br/>不验证业务规则"]
+    Orderer -->|区块| CommitPeer["提交 Peer<br/>验证背书与读版本<br/>有效交易更新状态"]
+    CommitPeer --> Ledger["Fabric 区块日志 + World State<br/>七类不可变业务记录"]
+    CommitPeer -->|有效提交确认| Gateway
+    Gateway -->|回执| Service
+
+    Ledger -->|查询 / 重放| Projection["MySQL 七类查询投影<br/>可从已提交链上事实重建"]
+    Ledger -->|已提交合约事件| Events["Fabric Gateway 事件重放<br/>场景显式调用，有时限<br/>从最近区块包含式恢复"]
+    Events --> Inbox["MySQL 事件收件表<br/>交易 ID + 事件名去重<br/>处理进度持久化"]
+    Inbox -->|场景随后调用| Scan["按批次补偿扫描<br/>FAIL 检测 / FLAGGED 审计<br/>已有预警则跳过"]
+    Ledger -->|查询已提交来源记录| Scan
+    Scan -->|预警 ID 为 EV-来源交易 ID<br/>无真实消息发送| Service
+    Projection -->|批次全景| Query["追溯查询<br/>来源、操作、检测、审核与审计"]
+    IPFS -->|报告原件| Query
+    Service --> Query

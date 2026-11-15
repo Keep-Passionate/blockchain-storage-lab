@@ -1,0 +1,4 @@
+SYNTHETIC SOFTWARE TEST REPORT — NOT A CERTIFICATE
+虚拟检测报告：PASS。所有机构、样品和结果均虚构。
+用途：测试报告原文进入IPFS、CID和SHA-256进入Fabric、取回后逐字节校验。
+本文件不包含任何真实检测标准、农药安全阈值或认证结论。

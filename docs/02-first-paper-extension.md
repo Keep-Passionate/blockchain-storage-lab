@@ -1,5 +1,7 @@
 # 第一篇模块的可控扩展
 
+> 历史扩展草案保留：下文的六阶段、销售与批处理路线不是当前四层业务，也不代表已实现的论文模块。已核验的论文页码与取舍见 [来源说明](03-provenance.md)，当前基线见 [四层业务设计](06-business-design.md)。SHT-PBFT 和 Fabric 底层 Radix 改造尚未实现。
+
 当前基线直接运行在 IPFS + Fabric 上，先完成单 Channel 的六阶段事件，再决定是否拆分账本或 Channel。
 
 第一篇论文的“分账本、跨账本事件、SHT-PBFT、Radix-Merkle”都涉及 Fabric 底层或网络层。首版先做可观察的应用层实验：

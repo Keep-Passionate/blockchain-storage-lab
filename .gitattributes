@@ -1,0 +1,12 @@
+# 文件功能：让服务器脚本及Go源码在Windows与Linux之间保持LF，避免解释器路径带CR。
+*.sh text eol=lf
+*.go text eol=lf
+*.sql text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.java text eol=lf
+*.py text eol=lf
+*.xml text eol=lf
+*.mmd text eol=lf
+*.svg text eol=lf

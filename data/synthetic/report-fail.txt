@@ -1,0 +1,4 @@
+SYNTHETIC SOFTWARE TEST REPORT — NOT A CERTIFICATE
+虚拟检测报告：FAIL。所有机构、样品和结果均虚构。
+用途：证明“不合格的检测事实”也应留存，并触发事件与模拟预警。
+这不等于“非法操作被接受”，也不代表真实产品不合格。

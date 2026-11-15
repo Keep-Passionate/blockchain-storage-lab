@@ -1,0 +1,9 @@
+{
+  "description": "仅用于软件功能测试，全部实体与结果虚构，不代表真实农田、操作或认证。${RUN} 与 ${BATCH_ID} 由实验入口替换。",
+  "plot": {"schemaVersion":1,"synthetic":true,"plotId":"DEMO-PLOT-${RUN}","regionCode":"DEMOTEA","crop":"茶","variety":"虚拟品种A","growthStage":"演示生育期","altitudeM":360,"environment":"虚拟地块，周边为模拟林带"},
+  "batch": {"schemaVersion":1,"synthetic":true,"batchId":"${BATCH_ID}","regionCode":"DEMOTEA","year":2026,"sequence":1,"plotId":"DEMO-PLOT-${RUN}","startedAt":"2026-10-01T00:00:00Z"},
+  "operation": {"schemaVersion":1,"synthetic":true,"operationId":"DEMO-OP-${RUN}","batchId":"${BATCH_ID}","plotId":"DEMO-PLOT-${RUN}","operationType":"IRRIGATION","performedAt":"2026-10-02T08:00:00Z","operatorId":"synthetic-operator","description":"演示灌溉操作，仅检查结构、时间与引用关系","ruleVersion":"trace-rules-v1"},
+  "rejectedOperation": {"schemaVersion":1,"synthetic":true,"operationId":"DEMO-BAD-${RUN}","batchId":"${BATCH_ID}","plotId":"DEMO-PLOT-${RUN}","operationType":"UNKNOWN_ACTION","performedAt":"2026-10-02T09:00:00Z","operatorId":"synthetic-operator","description":"特意构造不允许的操作类型，预期仅链下留证","ruleVersion":"trace-rules-v1"},
+  "passInspection": {"schemaVersion":1,"synthetic":true,"inspectionId":"DEMO-PASS-${RUN}","batchId":"${BATCH_ID}","conclusion":"PASS","labName":"虚拟检测室","testedAt":"2026-10-03T08:00:00Z","summary":"软件测试用的合格结论，非真实检测"},
+  "failInspection": {"schemaVersion":1,"synthetic":true,"inspectionId":"DEMO-FAIL-${RUN}","batchId":"${BATCH_ID}","conclusion":"FAIL","labName":"虚拟检测室","testedAt":"2026-10-04T08:00:00Z","summary":"软件测试用的不合格结论，触发模拟预警"}
+}
