@@ -73,6 +73,7 @@ docs/                      来源、业务、数据库、流程与教学图
 以下命令以已有项目依赖容器、Fabric test-network 和 `mychannel` 为前提，在能够访问 Docker 的服务器 shell 中运行。`infrastructure/.env` 应已在服务器私下配置；`lab-env.sh` 加载数据库凭据与工具路径，不把密码放进 Git。Fabric 适配器从 `FABRIC_SAMPLES_DIR/test-network/organizations/` 读取 Org1、Org2 的 User1 身份；证书和私钥不提交仓库。
 
 ```bash
+# 新环境首次部署；已有实验服务器直接使用下方的批次查询命令。
 cd ~/xc/blockchain-storage-lab
 source scripts/lab-env.sh
 bash scripts/migrate-db.sh
@@ -84,12 +85,12 @@ bash scripts/run-synthetic.sh 1
 
 场景 `1` 对应 `DEMOTEA-2026-000001`。新实验改用未用过的 `1..999999` 序号；程序拒绝覆盖已有 `summary.json`。输入在 `data/synthetic/scenario.json`、`report-pass.txt`、`report-fail.txt`。运行后检查 `runs/synthetic/<batchId>/summary.json`、`snapshot.json` 与 `audit-input.json`，以真实输出判断成功与否。
 
-已有批次可通过独立查询入口继续学习，无需再次创建数据。以下命令默认只读比较 Fabric 与数据库投影，并按链上 CID / SHA-256 核验检测和审计原件；输出写入 `runs/query/`。新增查询入口尚待独立实测，不能把场景通过当作该命令已通过。
+已有批次可通过独立查询入口继续学习，无需再次创建数据。以下命令默认只读比较 Fabric 与数据库投影，并按链上 CID / SHA-256 核验检测和审计原件；输出写入 `runs/query/`。只读查询与缺失投影恢复均已在服务器实测通过。
 
 ```bash
-bash scripts/query-batch.sh DEMOTEA-2026-000001
+bash scripts/query-batch.sh DEMOTEA-2026-000003
 # 仅在需要补齐缺失投影时使用；不覆盖冲突数据，不修改提交证据。
-bash scripts/query-batch.sh DEMOTEA-2026-000001 --rebuild
+bash scripts/query-batch.sh DEMOTEA-2026-000003 --rebuild
 ```
 
 对应代码是 [ProvenanceQueryMain.java](backend-java/src/main/java/lab/blockchain/backend/provenance/ProvenanceQueryMain.java)。默认展示筛选后的教学字段，比较时仍使用完整记录；它不提交新交易或上传文件。
@@ -98,9 +99,9 @@ bash scripts/query-batch.sh DEMOTEA-2026-000001 --rebuild
 
 ## 验证范围与下一步
 
-截至本次文档更新，本地 Java 共 10 个测试通过，服务器 Go 的 7 个顶层测试、10 个子用例通过；新 `provenance` 链码 `v1.0 / sequence 1` 已有效部署，四层场景 `DEMOTEA-2026-000001` 第一轮返回 `PASS`。本轮收取 7 个真实事件并生成 2 条模拟预警，通过了重复重放、补偿扫描和投影重放检查。正式结果、版本和产物边界见 [验证记录](docs/08-validation.md)。
+2026-11-15 验证完成：本地和服务器 Java 共 13 个测试通过；服务器 Go 的 7 个顶层测试、10 个子用例通过。新 `provenance` 链码 `v1.0 / sequence 1` 已有效部署；第一轮批次 1 与 Git 版本复验批次 `DEMOTEA-2026-000003` 均返回 `PASS`。最终批次有 9 条链上业务记录，含 2 条模拟预警；独立查询、事件重放去重、补偿扫描幂等和指定投影缺失恢复均通过。代码版本、计数和原始产物见 [验证记录](docs/08-validation.md)。
 
-最终 Git 文件同步后的再次验证仍在进行；不能将第一轮结果自动套用于文件字节已经变化的后续版本。单元测试的替身、真实服务器场景和新增查询命令分别记录，旧 `trace` 冒烟结果也不代替四层业务验证。
+批次 2 是中断后保留的部分实验，未标记成功；当前学习查询请用批次 3，新建实验从尚未占用的序号 4 开始。恢复测试只删除并恢复了本批次一个虚拟操作的 MySQL 投影，原始提交证据摘要前后完全一致。单元测试替身与真实服务器检查分别记录，不把功能验证解释为性能基准或生产验收。
 
 本地运行：
 

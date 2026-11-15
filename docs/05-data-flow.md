@@ -121,9 +121,9 @@ flowchart LR
 
 ## 7. 运行范围与后续扩展
 
-运行步骤见 [项目 README](../README.md)，输入见 `data/synthetic/`。四层场景 `DEMOTEA-2026-000001` 第一轮已返回 `PASS`，最终 Git 同步后的复验仍在进行，版本与产物见 [验证记录](08-validation.md)。早期 `trace` 的文件闭环验证不覆盖新七类记录、MySQL 和事件恢复。
+运行步骤见 [项目 README](../README.md)，输入见 `data/synthetic/`。Git 版本完整场景 `DEMOTEA-2026-000003` 已返回 `PASS`，版本与产物见 [验证记录](08-validation.md)。早期 `trace` 的文件闭环验证不覆盖新七类记录、MySQL 和事件恢复。
 
-独立查询命令为 `bash scripts/query-batch.sh DEMOTEA-2026-000001`，由 `ProvenanceQueryMain` 比较完整链上记录与数据库投影，并核验检测、审计证据的原始字节；新增入口尚待独立实测。可选 `--rebuild` 只补齐查询投影，不修改提交证据。
+独立查询命令为 `bash scripts/query-batch.sh DEMOTEA-2026-000003`，由 `ProvenanceQueryMain` 比较完整链上记录与数据库投影，并核验检测、审计证据的原始字节。已实测发现一个缺失的虚拟操作投影，再用 `--rebuild` 恢复到与链一致；提交证据前后保持不变。
 
 当前一个批次绑定一个地块快照；查询列表有规模上限，尚无分页。Org1MSP 演示生产/检测，Org2MSP 演示专家/监管，没有细粒度人员授权或资质认证。
 

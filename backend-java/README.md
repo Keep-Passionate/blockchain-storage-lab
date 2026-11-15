@@ -62,11 +62,11 @@ mvn -q -pl backend-java exec:java \
 新增的 `ProvenanceQueryMain` 用于独立查询已有批次：
 
 ```bash
-bash scripts/query-batch.sh DEMOTEA-2026-000001
-bash scripts/query-batch.sh DEMOTEA-2026-000001 --rebuild
+bash scripts/query-batch.sh DEMOTEA-2026-000003
+bash scripts/query-batch.sh DEMOTEA-2026-000003 --rebuild
 ```
 
-默认查询只读链和数据库，并核验 IPFS 检测报告与审计证据；`--rebuild` 只补齐投影，不覆盖冲突行或修改请求日志。它将筛选后的查询摘要写入 `runs/query/`，完整记录仍参与一致性比较。脚本使用已编译的类，不重复构建；新增查询入口尚待独立实测。
+默认查询只读链和数据库，并核验 IPFS 检测报告与审计证据；`--rebuild` 只补齐投影，不覆盖冲突行或修改请求日志。它将筛选后的查询摘要写入 `runs/query/`，完整记录仍参与一致性比较。脚本使用已编译的类，不重复构建；只读查询与指定投影缺失恢复已在服务器实测通过。
 
 环境变量由 `lab-env.sh` 与适配器共同使用：
 
@@ -84,7 +84,7 @@ bash scripts/query-batch.sh DEMOTEA-2026-000001 --rebuild
 
 ## 验证与旧代码
 
-截至本次文档更新，后端 8 个 Java 测试和 core 2 个测试通过；服务器四层场景 `DEMOTEA-2026-000001` 第一轮返回 `PASS`，包括报告核验、审核约束、真实事件收件与两条模拟预警。最终 Git 同步后的复验仍在进行；新增查询入口单独验证。版本与产物见 [验证记录](../docs/08-validation.md)，不要混淆内存替身检查与真实网络结果。
+本地与服务器的后端 11 个 Java 测试和 core 2 个测试均通过；Git 版本完整场景 `DEMOTEA-2026-000003` 返回 `PASS`，包括报告核验、审核约束、真实事件收件与两条模拟预警。独立查询和指定投影缺失恢复也通过，提交证据保持不变。版本与产物见 [验证记录](../docs/08-validation.md)；内存替身检查与真实网络结果分别记录。
 
 ```bash
 # 在仓库根目录运行本地 Java 检查。

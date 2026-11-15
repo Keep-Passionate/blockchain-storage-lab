@@ -21,7 +21,7 @@
 
 ### 第一轮结果
 
-虚拟批次 `DEMOTEA-2026-000001` 的 `summary.json` 返回 `status: PASS`，进程退出码为 0。它使用开发快照完成首轮联调；该轮报告文件行尾为 CRLF，Git 规范化后的 LF 报告字节会得到不同 CID，因此后续正式复验使用新批次编号，不覆写第一轮记录。
+虚拟批次 `DEMOTEA-2026-000001` 的 `summary.json` 返回 `status: PASS`，进程退出码为 0。它使用开发快照完成首轮联调；后续 Git 版本复验使用新批次编号，不覆写第一轮记录。报告文件均为 LF，已核验本地字节与 Git 内容一致；两轮同一报告得到相同 CID。
 
 | 检查 | 实际结果 |
 |---|---|
@@ -54,7 +54,43 @@ runs/synthetic/DEMOTEA-2026-000001/audit-input.json
 
 ## 最终代码复验
 
-最终 Git 版本、批次 2、只读查询及指定投影缺失恢复将在服务器执行后补充。不能仅凭脚本存在推断已经通过。
+代码提交：`23a7100583b3e080a8b41154a7e0b3d163125ecf`。服务器直接从 GitHub 拉取该版本，工作区干净。已部署链码的三个 Go 源文件与该提交一致；后续提交只更新说明与验证记录。
+
+最终完整批次为 **`DEMOTEA-2026-000003`**：场景退出码 0，`status: PASS`。Java 的 13 个测试也在服务器构建过程中全部通过。第二轮收到 10 条此前未入收件表的事件，其中 7 条来自新批次，另 3 条来自同步期间中断的批次 2。重复重放新增 0 条，本批次新增 2 条模拟预警，重复扫描新增 0 条。
+
+批次 `DEMOTEA-2026-000002` 保留为未完成实验：当时服务器 Git stash 因缺少提交身份而失败，工作区尚未切换，后续场景启动后被中止，留下地块、批次和操作三条记录。未将它标记为成功或删除其链上记录。之后使用临时 Git 身份保存开发快照，再切换到上述提交，使用新编号 3 完整复验。
+
+### 查询与恢复实测
+
+独立查询命令退出码 0，`projectionMatchesLedger: true`、`objectHashesMatch: true`。最终记录数量为：
+
+| 类型 | Fabric | MySQL 投影 |
+|---|---:|---:|
+| 地块 | 1 | 1 |
+| 批次 | 1 | 1 |
+| 操作 | 1 | 1 |
+| 检测 | 2 | 2 |
+| 审核 | 1 | 1 |
+| 审计 | 1 | 1 |
+| 预警 | 2 | 2 |
+| 合计 | 9 | 9 |
+
+恢复测试只针对 `DEMO-OP-3` 的数据库投影。先保存原始投影，再移除这一个精确编号且 `synthetic=true` 的行；链上记录保持不变。默认查询返回非零退出码，报告操作 `ledger=1, database=0`，其余记录和三个 IPFS 对象仍匹配。随后运行 `--rebuild`，查询通过，恢复后的完整投影与删除前字节一致。全部批次提交证据前后完全一致，SHA-256 均为 `1fa4a94557e02152dad64bf98120b27cf7463fbb796cb1677bfa254e457bb00ed`。没有清空整表，也没有更改其他批次。
+
+PASS 报告 CID 为 `QmbnhLwpoZcXjKsZWgBtvCrG1CYsZ6EMmyp8cWUs9cVpXG`，原件 302 字节，SHA-256 为 `1d43d39e37597f09b19fbfe6ace00a7aa8ae4548ffd336e736a2e74e313f67f8`。两份检测报告和本次审计包均由查询程序逐个核验为 `MATCH`。
+
+最终服务器产物：
+
+```text
+runs/synthetic-3.log
+runs/synthetic/DEMOTEA-2026-000003/{summary.json,snapshot.json,audit-input.json}
+runs/query-3.log
+runs/query/DEMOTEA-2026-000003-*/summary.json
+runs/recovery-3/{summary.json,operation-before.json,missing.log,repaired.log}
+.cache/verify-projection-recovery.py
+```
+
+Go 链码源文件 SHA-256：`provenance_contract.go` 为 `5697a0227562f0da91a3e5fa79939623a9a8b0dde540261602fcd1578dc20469`，`provenance_contract_test.go` 为 `89a842d365a0d63225a0e9c4548fb07cdf230a3e598efb56326535544e993914`，`trace_contract.go` 为 `b4ca079931abafff037ae2b0536429b847174a3119fd5b03d2174bf00fe43022`。
 
 ## 如何自行观察
 
@@ -62,16 +98,16 @@ runs/synthetic/DEMOTEA-2026-000001/audit-input.json
 
 ```bash
 cd ~/xc/blockchain-storage-lab
-bash scripts/query-batch.sh DEMOTEA-2026-000001
+bash scripts/query-batch.sh DEMOTEA-2026-000003
 ```
 
 从链补齐该批次投影：
 
 ```bash
-bash scripts/query-batch.sh DEMOTEA-2026-000001 --rebuild
+bash scripts/query-batch.sh DEMOTEA-2026-000003 --rebuild
 ```
 
-若现有投影内容与链不同，程序报告冲突，不静默覆盖。`--rebuild` 不重建链下独有的 `p_submission` 原始证据。新实验使用未占用序号：`bash scripts/run-synthetic.sh 3`；服务运行期间不要执行 `network.sh down` 或删除数据卷。
+若现有投影内容与链不同，程序报告冲突，不静默覆盖。`--rebuild` 不重建链下独有的 `p_submission` 原始证据。本次执行后 1、2、3 已使用，新实验可用序号 4：`bash scripts/run-synthetic.sh 4`；之后继续选未占用序号。服务运行期间不要执行 `network.sh down` 或删除数据卷。
 
 ## 验证边界
 
